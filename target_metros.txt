@@ -1,0 +1,227 @@
+Akron, OH MSA
+Albany, OR MSA
+Albuquerque, NM MSA
+Allentown-Bethlehem-Easton, PA-NJ MSA
+Amarillo, TX MSA
+Ann Arbor, MI MSA
+Appleton, WI MSA
+Asheville, NC MSA
+Athens-Clarke County, GA MSA
+Atlanta-Sandy Springs-Roswell, GA MSA
+Auburn-Opelika, AL MSA
+Augusta-Richmond County, GA-SC MSA
+Austin-Round Rock-San Marcos, TX MSA
+Bakersfield-Delano, CA MSA
+Baltimore-Columbia-Towson, MD MSA
+Baton Rouge, LA MSA
+Beaumont-Port Arthur, TX MSA
+Bellingham, WA MSA
+Bend, OR MSA
+Billings, MT MSA
+Birmingham, AL MSA
+Boise City, ID MSA
+Boston-Cambridge-Newton, MA-NH MSA
+Boulder, CO MSA
+Bozeman, MT MSA
+Bremerton-Silverdale-Port Orchard, WA MSA
+Bridgeport-Stamford-Danbury, CT MSA
+Brownsville-Harlingen, TX MSA
+Canton-Massillon, OH MSA
+Cape Coral-Fort Myers, FL MSA
+Cedar Rapids, IA MSA
+Champaign-Urbana, IL MSA
+Charleston-North Charleston, SC MSA
+Charleston, WV MSA
+Charlotte-Concord-Gastonia, NC-SC MSA
+Charlottesville, VA MSA
+Chattanooga, TN-GA MSA
+Chicago-Naperville-Elgin, IL-IN MSA
+Chico, CA MSA
+Cincinnati, OH-KY-IN MSA
+Clarksville, TN-KY MSA
+Cleveland, OH MSA
+Coeur d'Alene, ID MSA
+College Station-Bryan, TX MSA
+Colorado Springs, CO MSA
+Columbia, MO MSA
+Columbia, SC MSA
+Columbus, GA-AL MSA
+Columbus, OH MSA
+Corpus Christi, TX MSA
+Corvallis, OR MSA
+Crestview-Fort Walton Beach-Destin, FL MSA
+Dallas-Fort Worth-Arlington, TX MSA
+Daphne-Fairhope-Foley, AL MSA
+Davenport-Moline-Rock Island, IA-IL MSA
+Dayton-Kettering-Beavercreek, OH MSA
+Deltona-Daytona Beach-Ormond Beach, FL MSA
+Denver-Aurora-Centennial, CO MSA
+Des Moines-West Des Moines, IA MSA
+Detroit-Warren-Dearborn, MI MSA
+Durham-Chapel Hill, NC MSA
+El Paso, TX MSA
+Elkhart-Goshen, IN MSA
+Erie, PA MSA
+Eugene-Springfield, OR MSA
+Evansville, IN MSA
+Fargo, ND-MN MSA
+Fayetteville-Springdale-Rogers, AR MSA
+Fayetteville, NC MSA
+Flagstaff, AZ MSA
+Flint, MI MSA
+Fort Collins-Loveland, CO MSA
+Fort Wayne, IN MSA
+Fresno, CA MSA
+Gainesville, FL MSA
+Grand Rapids-Wyoming-Kentwood, MI MSA
+Greeley, CO MSA
+Green Bay, WI MSA
+Greensboro-High Point, NC MSA
+Greenville-Anderson-Greer, SC MSA
+Gulfport-Biloxi, MS MSA
+Hagerstown-Martinsburg, MD-WV MSA
+Harrisburg-Carlisle, PA MSA
+Hartford-West Hartford-East Hartford, CT MSA
+Helena, MT MSA
+Hickory-Lenoir-Morganton, NC MSA
+Hilton Head Island-Bluffton-Port Royal, SC MSA
+Houma-Bayou Cane-Thibodaux, LA MSA
+Houston-Pasadena-The Woodlands, TX MSA
+Huntington-Ashland, WV-KY-OH MSA
+Huntsville, AL MSA
+Indianapolis-Carmel-Greenwood, IN MSA
+Jackson, MS MSA
+Jacksonville, FL MSA
+Jacksonville, NC MSA
+Johnson City, TN MSA
+Kalamazoo-Portage, MI MSA
+Kansas City, MO-KS MSA
+Kennewick-Richland, WA MSA
+Killeen-Temple, TX MSA
+Kingsport-Bristol, TN-VA MSA
+Knoxville, TN MSA
+Lafayette, LA MSA
+Lake Charles, LA MSA
+Lake Havasu City-Kingman, AZ MSA
+Lakeland-Winter Haven, FL MSA
+Lancaster, PA MSA
+Lansing-East Lansing, MI MSA
+Laredo, TX MSA
+Las Vegas-Henderson-North Las Vegas, NV MSA
+Lexington Park, MD MSA
+Lexington-Fayette, KY MSA
+Lincoln, NE MSA
+Little Rock-North Little Rock-Conway, AR MSA
+Logan, UT-ID MSA
+Longview, TX MSA
+Los Angeles-Long Beach-Anaheim, CA MSA
+Louisville/Jefferson County, KY-IN MSA
+Lubbock, TX MSA
+Lynchburg, VA MSA
+Macon-Bibb County, GA MSA
+Madison, WI MSA
+Manhattan, KS MSA
+McAllen-Edinburg-Mission, TX MSA
+Medford, OR MSA
+Memphis, TN-MS-AR MSA
+Merced, CA MSA
+Miami-Fort Lauderdale-West Palm Beach, FL MSA
+Milwaukee-Waukesha, WI MSA
+Minneapolis-St. Paul-Bloomington, MN-WI MSA
+Missoula, MT MSA
+Mobile, AL MSA
+Modesto, CA MSA
+Monroe, LA MSA
+Montgomery, AL MSA
+Muncie, IN MSA
+Myrtle Beach-Conway-North Myrtle Beach, SC MSA
+Napa, CA MSA
+Naples-Marco Island, FL MSA
+Nashville-Davidson-Murfreesboro-Franklin, TN MSA
+New Haven, CT MSA
+New Orleans-Metairie, LA MSA
+North Port-Bradenton-Sarasota, FL MSA
+Norwich-New London-Willimantic, CT MSA
+Ocala, FL MSA
+Odessa, TX MSA
+Ogden, UT MSA
+Oklahoma City, OK MSA
+Olympia-Lacey-Tumwater, WA MSA
+Omaha, NE-IA MSA
+Orlando-Kissimmee-Sanford, FL MSA
+Other
+Oxnard-Thousand Oaks-Ventura, CA MSA
+Palm Bay-Melbourne-Titusville, FL MSA
+Pensacola-Ferry Pass-Brent, FL MSA
+Peoria, IL MSA
+Philadelphia-Camden-Wilmington, PA-NJ-DE-MD MSA
+Phoenix-Mesa-Chandler, AZ MSA
+Pittsburgh, PA MSA
+Pittsfield, MA MSA
+Pocatello, ID MSA
+Port St. Lucie, FL MSA
+Portland-Vancouver-Hillsboro, OR-WA MSA
+Prescott Valley-Prescott, AZ MSA
+Providence-Warwick, RI-MA MSA
+Provo-Orem-Lehi, UT MSA
+Punta Gorda, FL MSA
+Raleigh-Cary, NC MSA
+Reading, PA MSA
+Reno, NV MSA
+Richmond, VA MSA
+Riverside-San Bernardino-Ontario, CA MSA
+Roanoke, VA MSA
+Rockford, IL MSA
+Rural
+Sacramento-Roseville-Folsom, CA MSA
+Salem, OR MSA
+Salinas, CA MSA
+Salt Lake City-Murray, UT MSA
+San Antonio-New Braunfels, TX MSA
+San Diego-Chula Vista-Carlsbad, CA MSA
+San Francisco-Oakland-Fremont, CA MSA
+San Jose-Sunnyvale-Santa Clara, CA MSA
+San Luis Obispo-Paso Robles, CA MSA
+Santa Cruz-Watsonville, CA MSA
+Santa Maria-Santa Barbara, CA MSA
+Santa Rosa-Petaluma, CA MSA
+Savannah, GA MSA
+Scranton-Wilkes-Barre, PA MSA
+Seattle-Tacoma-Bellevue, WA MSA
+Shreveport-Bossier City, LA MSA
+Sioux Falls, SD-MN MSA
+Slidell-Mandeville-Covington, LA MSA
+South Bend-Mishawaka, IN-MI MSA
+Spartanburg, SC MSA
+Spokane-Spokane Valley, WA MSA
+Springfield, IL MSA
+Springfield, MA MSA
+Springfield, MO MSA
+St. Cloud, MN MSA
+St. George, UT MSA
+St. Louis, MO-IL MSA
+State College, PA MSA
+Stockton-Lodi, CA MSA
+Tallahassee, FL MSA
+Tampa-St. Petersburg-Clearwater, FL MSA
+Toledo, OH MSA
+Topeka, KS MSA
+Tucson, AZ MSA
+Tulsa, OK MSA
+Tuscaloosa, AL MSA
+Tyler, TX MSA
+Vallejo, CA MSA
+Virginia Beach-Chesapeake-Norfolk, VA-NC MSA
+Visalia, CA MSA
+Waco, TX MSA
+Warner Robins, GA MSA
+Washington-Arlington-Alexandria, DC-VA-MD-WV MSA
+Waterbury-Shelton, CT MSA
+Wichita, KS MSA
+Wilmington, NC MSA
+Winston-Salem, NC MSA
+Worcester, MA MSA
+Yakima, WA MSA
+York-Hanover, PA MSA
+Youngstown-Warren, OH MSA
+Yuma, AZ MSA
