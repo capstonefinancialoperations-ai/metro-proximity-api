@@ -35,6 +35,12 @@ def is_excluded_state(state):
         return False
     return state in EXCLUDED_STATES or state.upper() in EXCLUDED_STATES
 
+def ensure_metro_data_loaded():
+    """Lazy load metro data if not already loaded"""
+    global metro_data
+    if metro_data is None:
+        load_metro_data()
+
 def load_metro_data():
     """Load Census MSA boundaries on startup"""
     global metro_data
@@ -119,6 +125,7 @@ def home():
 @app.route('/map')
 def map_view():
     """Interactive map visualization"""
+    ensure_metro_data_loaded()
     if metro_data is None:
         return "Metro data not loaded", 500
     
@@ -218,6 +225,7 @@ def map_view():
         <script>
             let marker = null;
             let circle = null;
+            let line = null;
             
             // Get the map object - Folium creates it in the global scope
             function getMap() {
@@ -265,12 +273,15 @@ def map_view():
                     const apiResponse = await fetch(`/check-proximity?lat=${lat}&lon=${lon}&max_distance=50`);
                     const apiData = await apiResponse.json();
                     
-                    // Remove old marker and circle if they exist
+                    // Remove old marker, circle, and line if they exist
                     if (marker) {
                         theMap.removeLayer(marker);
                     }
                     if (circle) {
                         theMap.removeLayer(circle);
+                    }
+                    if (line) {
+                        theMap.removeLayer(line);
                     }
                     
                     // Add marker to map
@@ -285,6 +296,30 @@ def map_view():
                         fillOpacity: 0.2,
                         weight: 2
                     }).addTo(theMap);
+                    
+                    // Draw line to nearest metro edge if not inside
+                    if (!apiData.excluded && !apiData.is_inside_metro && apiData.nearest_metro.edge_coords) {
+                        const edgeCoords = apiData.nearest_metro.edge_coords;
+                        line = L.polyline(
+                            [[lat, lon], edgeCoords],
+                            {
+                                color: apiData.within_range ? 'blue' : 'red',
+                                weight: 3,
+                                opacity: 0.7,
+                                dashArray: '10, 10'
+                            }
+                        ).addTo(theMap);
+                        
+                        // Add a small marker at the metro edge
+                        L.circleMarker(edgeCoords, {
+                            radius: 6,
+                            fillColor: apiData.within_range ? 'blue' : 'red',
+                            color: '#fff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        }).addTo(theMap).bindPopup(`Nearest point on ${apiData.nearest_metro.name} boundary`);
+                    }
                     
                     // Zoom to location
                     theMap.setView([lat, lon], 8);
@@ -346,6 +381,9 @@ def check_proximity():
     - max_distance: maximum distance in miles (default: 50)
     """
     try:
+        # Lazy load data if needed
+        ensure_metro_data_loaded()
+        
         # Get parameters
         lat = float(request.args.get('lat'))
         lon = float(request.args.get('lon'))
@@ -385,6 +423,13 @@ def check_proximity():
         nearest_distance_miles = nearest_overall['distance'] / 1609.34
         is_inside_nearest = nearest_overall.geometry.contains(point.iloc[0])
         
+        # Get closest point on metro boundary for line drawing
+        nearest_geom_wgs84 = metro_data.to_crs('EPSG:4326').loc[nearest_overall.name].geometry
+        from shapely.ops import nearest_points
+        point_wgs84 = Point(lon, lat)
+        _, closest_point = nearest_points(point_wgs84, nearest_geom_wgs84)
+        nearest_edge_coords = [closest_point.y, closest_point.x]  # [lat, lon]
+        
         # Find metros within max distance
         nearby_metros = metro_working[metro_working['distance'] <= max_distance_meters].copy()
         
@@ -396,7 +441,8 @@ def check_proximity():
                 "nearest_metro": {
                     "name": nearest_overall['NAME'],
                     "cbsa_code": nearest_overall['CBSAFP'],
-                    "distance_to_edge_miles": round(nearest_distance_miles, 2)
+                    "distance_to_edge_miles": round(nearest_distance_miles, 2),
+                    "edge_coords": nearest_edge_coords
                 },
                 "message": f"Nearest metro is {round(nearest_distance_miles, 2)} miles away (outside {max_distance_miles} mile range)"
             })
@@ -414,7 +460,8 @@ def check_proximity():
             "nearest_metro": {
                 "name": nearest['NAME'],
                 "cbsa_code": nearest['CBSAFP'],
-                "distance_to_edge_miles": 0 if is_inside else round(distance_miles, 2)
+                "distance_to_edge_miles": 0 if is_inside else round(distance_miles, 2),
+                "edge_coords": nearest_edge_coords
             },
             "all_nearby_metros": []
         }
@@ -439,8 +486,8 @@ def check_proximity():
             "error": str(e)
         }), 500
 
-# Load metro data when module is imported (for Gunicorn)
-load_metro_data()
+# Don't load on startup - load on first request to avoid timeout
+# load_metro_data()  # Commented out - will lazy load instead
 
 if __name__ == '__main__':
     # This runs only when running directly with python (not with Gunicorn)
