@@ -374,16 +374,19 @@ def check_proximity():
         # Convert to same CRS as metro data
         point = point.to_crs('EPSG:3857')
         
+        # Make a copy to avoid modifying global data
+        metro_working = metro_data.copy()
+        
         # Calculate distance to each metro area boundary
-        metro_data['distance'] = metro_data.geometry.distance(point.iloc[0])
+        metro_working['distance'] = metro_working.geometry.distance(point.iloc[0])
         
         # Get the absolute nearest metro (regardless of distance)
-        nearest_overall = metro_data.loc[metro_data['distance'].idxmin()]
+        nearest_overall = metro_working.loc[metro_working['distance'].idxmin()]
         nearest_distance_miles = nearest_overall['distance'] / 1609.34
         is_inside_nearest = nearest_overall.geometry.contains(point.iloc[0])
         
         # Find metros within max distance
-        nearby_metros = metro_data[metro_data['distance'] <= max_distance_meters].copy()
+        nearby_metros = metro_working[metro_working['distance'] <= max_distance_meters].copy()
         
         if len(nearby_metros) == 0:
             # Still return nearest metro info, but indicate it's outside range
