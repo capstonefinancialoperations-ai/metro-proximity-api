@@ -439,7 +439,10 @@ def check_proximity():
             "error": str(e)
         }), 500
 
+# Load metro data when module is imported (for Gunicorn)
+load_metro_data()
+
 if __name__ == '__main__':
-    load_metro_data()
+    # This runs only when running directly with python (not with Gunicorn)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
