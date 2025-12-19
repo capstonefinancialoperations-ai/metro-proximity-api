@@ -142,31 +142,39 @@ def home():
     </html>
     '''
 
+@app.route('/metros.geojson')
+def metros_geojson():
+    """Return metro centers as points for lightweight loading"""
+    ensure_metro_data_loaded()
+    if metro_data is None:
+        return jsonify({"error": "Metro data not loaded"}), 500
+    
+    # Convert to WGS84 and get centroids as simple list
+    metro_display = metro_data.to_crs('EPSG:4326')
+    features = []
+    for idx, row in metro_display.iterrows():
+        centroid = row.geometry.centroid
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [centroid.x, centroid.y]
+            },
+            "properties": {
+                "name": row['NAME']
+            }
+        })
+    
+    return jsonify({
+        "type": "FeatureCollection",
+        "features": features
+    })
+
 @app.route('/map')
 def map_view():
     """Interactive map visualization"""
-    ensure_metro_data_loaded()
-    if metro_data is None:
-        return "Metro data not loaded", 500
-    
-    # Create map centered on US
+    # Don't pre-load metros - let JavaScript load them asynchronously
     m = folium.Map(location=[39.8283, -98.5795], zoom_start=4, tiles='OpenStreetMap')
-    
-    # Convert metro data back to WGS84 for display
-    metro_display = metro_data.to_crs('EPSG:4326')
-    
-    # Add metro areas to map
-    folium.GeoJson(
-        metro_display,
-        name='Target Metro Areas',
-        style_function=lambda x: {
-            'fillColor': '#3388ff',
-            'color': '#0066cc',
-            'weight': 1,
-            'fillOpacity': 0.3
-        },
-        tooltip=folium.GeoJsonTooltip(fields=['NAME'], aliases=['Metro Area:'])
-    ).add_to(m)
     
     # Add search functionality
     html_template = '''
@@ -240,7 +248,7 @@ def map_view():
         
         <div class="info-box">
             <strong>Metro Coverage Map</strong><br>
-            <small>Blue shaded areas = Target metro areas<br>
+            <small>Blue circles = 50-mile radius from metro centers<br>
             <strong>Search tips:</strong><br>
             • City, State: "Phoenix, AZ"<br>
             • Zip code: "85718"<br>
@@ -253,9 +261,39 @@ def map_view():
             let marker = null;
             let circle = null;
             let line = null;
+            let metroLayer = null;
             
-            // Load saved Google API key from localStorage
-            window.addEventListener('DOMContentLoaded', (event) => {
+            // Load metros from GeoJSON endpoint after map loads
+            window.addEventListener('DOMContentLoaded', async () => {
+                const theMap = getMap();
+                if (theMap) {
+                    try {
+                        const response = await fetch('/metros.geojson');
+                        const geojsonData = await response.json();
+                        
+                        metroLayer = L.geoJSON(geojsonData, {
+                            pointToLayer: (feature, latlng) => {
+                                return L.circle(latlng, {
+                                    radius: 50 * 1609.34, // 50 miles in meters
+                                    fillColor: '#3388ff',
+                                    color: '#0066cc',
+                                    weight: 2,
+                                    fillOpacity: 0.15,
+                                    opacity: 0.5
+                                });
+                            },
+                            onEachFeature: (feature, layer) => {
+                                if (feature.properties && feature.properties.name) {
+                                    layer.bindTooltip(feature.properties.name);
+                                }
+                            }
+                        }).addTo(theMap);
+                    } catch (error) {
+                        console.error('Failed to load metro boundaries:', error);
+                    }
+                }
+                
+                // Load saved Google API key from localStorage
                 const savedKey = localStorage.getItem('googleMapsApiKey');
                 if (savedKey) {
                     document.getElementById('googleApiKey').value = savedKey;
