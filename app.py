@@ -18,15 +18,35 @@ EXCLUDED_STATES = {
 }
 
 def get_state_from_coords(lat, lon):
-    """Get state from coordinates using reverse geocoding"""
+    """Get state from coordinates - use metro name to infer state"""
+    # Quick method: check if coordinates fall within any metro area
+    # and extract state from metro name (they all include state abbreviations)
     try:
-        geolocator = Nominatim(user_agent="metro_proximity_api")
-        location = geolocator.reverse(f"{lat}, {lon}", language='en')
-        if location and location.raw.get('address'):
-            state = location.raw['address'].get('state', '')
-            return state
-    except:
-        pass
+        if metro_data is None:
+            return None
+            
+        point = gpd.GeoSeries([Point(lon, lat)], crs='EPSG:4326')
+        point_proj = point.to_crs('EPSG:3857')
+        
+        # Check if point is inside any metro
+        for idx, row in metro_data.iterrows():
+            if row.geometry.contains(point_proj.iloc[0]):
+                # Extract state from metro name (e.g., "Miami, FL" -> "FL")
+                metro_name = row['NAME']
+                # State abbreviations are usually after comma or hyphen
+                parts = metro_name.replace('-', ',').split(',')
+                for part in parts:
+                    part = part.strip()
+                    # Check if it's a state abbreviation (2 letters) or full name
+                    if len(part) == 2 and part.isupper():
+                        return part
+                    # Check against full state names
+                    for state in EXCLUDED_STATES:
+                        if state in part:
+                            return state
+                break
+    except Exception as e:
+        print(f"State lookup error: {e}")
     return None
 
 def is_excluded_state(state):
@@ -211,13 +231,20 @@ def map_view():
             <h3 style="margin-top:0">Search Address</h3>
             <input type="text" id="addressInput" placeholder="Enter address..." onkeypress="if(event.key===\'Enter\')searchAddress()">
             <button onclick="searchAddress()">Search</button>
+            <div style="margin-top: 10px; font-size: 12px;">
+                <label><input type="checkbox" id="useGoogle"> Use Google Maps (more accurate)</label>
+                <input type="text" id="googleApiKey" placeholder="Google API Key" style="width: 200px; margin-left: 5px; font-size: 11px;" title="Optional: Paste your Google Maps API key for better address lookup">
+            </div>
             <div id="result"></div>
         </div>
         
         <div class="info-box">
             <strong>Metro Coverage Map</strong><br>
             <small>Blue shaded areas = Target metro areas<br>
-            Enter an address to see if it\'s within 50 miles</small>
+            <strong>Search tips:</strong><br>
+            • City, State: "Phoenix, AZ"<br>
+            • Zip code: "85718"<br>
+            • Full addresses may not always work</small>
         </div>
         
         ''' + m.get_root().render() + '''
@@ -226,6 +253,24 @@ def map_view():
             let marker = null;
             let circle = null;
             let line = null;
+            
+            // Load saved Google API key from localStorage
+            window.addEventListener('DOMContentLoaded', (event) => {
+                const savedKey = localStorage.getItem('googleMapsApiKey');
+                if (savedKey) {
+                    document.getElementById('googleApiKey').value = savedKey;
+                    document.getElementById('useGoogle').checked = true;
+                }
+            });
+            
+            // Save API key when changed
+            document.addEventListener('DOMContentLoaded', () => {
+                document.getElementById('googleApiKey').addEventListener('change', (e) => {
+                    if (e.target.value) {
+                        localStorage.setItem('googleMapsApiKey', e.target.value);
+                    }
+                });
+            });
             
             // Get the map object - Folium creates it in the global scope
             function getMap() {
@@ -257,17 +302,39 @@ def map_view():
                 resultDiv.innerHTML = 'Searching...';
                 
                 try {
-                    // Geocode the address using Nominatim
-                    const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
-                    const geoData = await geoResponse.json();
+                    let lat, lon, displayName;
+                    const useGoogle = document.getElementById('useGoogle').checked;
+                    const googleApiKey = document.getElementById('googleApiKey').value;
                     
-                    if (geoData.length === 0) {
-                        resultDiv.innerHTML = '<span style="color: red;">Address not found</span>';
-                        return;
+                    if (useGoogle && googleApiKey) {
+                        // Use Google Maps Geocoding
+                        const googleUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleApiKey}`;
+                        const googleResponse = await fetch(googleUrl);
+                        const googleData = await googleResponse.json();
+                        
+                        if (googleData.status === 'OK' && googleData.results.length > 0) {
+                            const location = googleData.results[0].geometry.location;
+                            lat = location.lat;
+                            lon = location.lng;
+                            displayName = googleData.results[0].formatted_address;
+                        } else {
+                            resultDiv.innerHTML = `<span style="color: red;">Google Maps error: ${googleData.status}</span>`;
+                            return;
+                        }
+                    } else {
+                        // Use Nominatim (free)
+                        const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&addressdetails=1`);
+                        const geoData = await geoResponse.json();
+                        
+                        if (geoData.length > 0) {
+                            lat = parseFloat(geoData[0].lat);
+                            lon = parseFloat(geoData[0].lon);
+                            displayName = geoData[0].display_name;
+                        } else {
+                            resultDiv.innerHTML = 'Address not found. Try:<br>• City name ("Scottsdale, AZ")<br>• Zip code ("85718")<br>• Or enable Google Maps above';
+                            return;
+                        }
                     }
-                    
-                    const lat = parseFloat(geoData[0].lat);
-                    const lon = parseFloat(geoData[0].lon);
                     
                     // Check proximity via API
                     const apiResponse = await fetch(`/check-proximity?lat=${lat}&lon=${lon}&max_distance=50`);
@@ -286,7 +353,7 @@ def map_view():
                     
                     // Add marker to map
                     marker = L.marker([lat, lon]).addTo(theMap);
-                    marker.bindPopup(`<b>${geoData[0].display_name}</b><br>${apiData.within_range ? '✓ Within range' : '✗ Outside range'}`).openPopup();
+                    marker.bindPopup(`<b>${displayName}</b><br>${apiData.within_range ? '✓ Within range' : '✗ Outside range'}`).openPopup();
                     
                     // Add 50-mile radius circle
                     circle = L.circle([lat, lon], {
@@ -343,7 +410,7 @@ def map_view():
                                 shadowSize: [41, 41]
                             })
                         }).addTo(theMap);
-                        marker.bindPopup(`<b>${geoData[0].display_name}</b><br>⛔ Excluded State: ${apiData.excluded_state}`).openPopup();
+                        marker.bindPopup(`<b>${displayName}</b><br>⛔ Excluded State: ${apiData.excluded_state}`).openPopup();
                         // Make circle orange
                         circle.setStyle({color: 'orange', fillColor: '#FFA500'});
                     } else if (apiData.within_range) {
@@ -381,9 +448,6 @@ def check_proximity():
     - max_distance: maximum distance in miles (default: 50)
     """
     try:
-        # Lazy load data if needed
-        ensure_metro_data_loaded()
-        
         # Get parameters
         lat = float(request.args.get('lat'))
         lon = float(request.args.get('lon'))
@@ -398,14 +462,20 @@ def check_proximity():
             }), 500
         
         # Check if location is in excluded state
-        state = get_state_from_coords(lat, lon)
-        if is_excluded_state(state):
-            return jsonify({
-                "excluded": True,
-                "excluded_state": state,
-                "within_range": False,
-                "message": f"We do not lend in {state}"
-            })
+        try:
+            state = get_state_from_coords(lat, lon)
+            print(f"State check for ({lat}, {lon}): {state}")
+            if state and is_excluded_state(state):
+                print(f"Location is in excluded state: {state}")
+                return jsonify({
+                    "excluded": True,
+                    "excluded_state": state,
+                    "within_range": False,
+                    "message": f"We do not lend in {state}"
+                })
+        except Exception as e:
+            print(f"Error checking state: {e}")
+            # Continue with metro check even if state check fails
         
         # Create point from coordinates (WGS84)
         point = gpd.GeoSeries([Point(lon, lat)], crs='EPSG:4326')
@@ -486,8 +556,8 @@ def check_proximity():
             "error": str(e)
         }), 500
 
-# Don't load on startup - load on first request to avoid timeout
-# load_metro_data()  # Commented out - will lazy load instead
+# Load metro data when module is imported (for Gunicorn)
+load_metro_data()
 
 if __name__ == '__main__':
     # This runs only when running directly with python (not with Gunicorn)
