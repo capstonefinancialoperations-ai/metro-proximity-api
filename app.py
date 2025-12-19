@@ -5,6 +5,11 @@ import folium
 from geopy.geocoders import Nominatim
 import os
 import json
+from dotenv import load_dotenv
+import requests
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -142,6 +147,49 @@ def home():
     </html>
     '''
 
+@app.route('/geocode')
+def geocode():
+    """Geocode an address using Google Maps or Nominatim"""
+    address = request.args.get('address')
+    if not address:
+        return jsonify({"error": "Address parameter required"}), 400
+    
+    # Try Google Maps first if API key is available
+    google_api_key = os.getenv('GOOGLE_MAPS_API_KEY')
+    if google_api_key:
+        try:
+            url = f"https://maps.googleapis.com/maps/api/geocode/json?address={requests.utils.quote(address)}&key={google_api_key}"
+            response = requests.get(url, timeout=5)
+            data = response.json()
+            
+            if data.get('status') == 'OK' and data.get('results'):
+                location = data['results'][0]['geometry']['location']
+                return jsonify({
+                    "lat": location['lat'],
+                    "lon": location['lng'],
+                    "display_name": data['results'][0]['formatted_address'],
+                    "source": "Google Maps"
+                })
+        except Exception as e:
+            print(f"Google Maps geocoding error: {e}")
+            # Fall through to Nominatim
+    
+    # Fallback to Nominatim (free)
+    try:
+        geolocator = Nominatim(user_agent="metro_proximity_checker")
+        location = geolocator.geocode(address)
+        if location:
+            return jsonify({
+                "lat": location.latitude,
+                "lon": location.longitude,
+                "display_name": location.address,
+                "source": "Nominatim"
+            })
+        else:
+            return jsonify({"error": "Address not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/metros.geojson')
 def metros_geojson():
     """Return metro centers as points for lightweight loading"""
@@ -237,22 +285,19 @@ def map_view():
     <body>
         <div class="search-box">
             <h3 style="margin-top:0">Search Address</h3>
-            <input type="text" id="addressInput" placeholder="Enter address..." onkeypress="if(event.key===\'Enter\')searchAddress()">
+            <input type="text" id="addressInput" placeholder="Enter full address, city, or zip code..." onkeypress="if(event.key===\'Enter\')searchAddress()">
             <button onclick="searchAddress()">Search</button>
-            <div style="margin-top: 10px; font-size: 12px;">
-                <label><input type="checkbox" id="useGoogle"> Use Google Maps (more accurate)</label>
-                <input type="text" id="googleApiKey" placeholder="Google API Key" style="width: 200px; margin-left: 5px; font-size: 11px;" title="Optional: Paste your Google Maps API key for better address lookup">
-            </div>
             <div id="result"></div>
         </div>
         
         <div class="info-box">
             <strong>Metro Coverage Map</strong><br>
             <small>Blue circles = 50-mile radius from metro centers<br>
-            <strong>Search tips:</strong><br>
+            <strong>Powered by Google Maps</strong><br>
+            Search by:<br>
+            • Full address: "123 Main St, Phoenix, AZ"<br>
             • City, State: "Phoenix, AZ"<br>
-            • Zip code: "85718"<br>
-            • Full addresses may not always work</small>
+            • Zip code: "85718"</small>
         </div>
         
         ''' + m.get_root().render() + '''
@@ -292,22 +337,6 @@ def map_view():
                         console.error('Failed to load metro boundaries:', error);
                     }
                 }
-                
-                // Load saved Google API key from localStorage
-                const savedKey = localStorage.getItem('googleMapsApiKey');
-                if (savedKey) {
-                    document.getElementById('googleApiKey').value = savedKey;
-                    document.getElementById('useGoogle').checked = true;
-                }
-            });
-            
-            // Save API key when changed
-            document.addEventListener('DOMContentLoaded', () => {
-                document.getElementById('googleApiKey').addEventListener('change', (e) => {
-                    if (e.target.value) {
-                        localStorage.setItem('googleMapsApiKey', e.target.value);
-                    }
-                });
             });
             
             // Get the map object - Folium creates it in the global scope
@@ -340,39 +369,18 @@ def map_view():
                 resultDiv.innerHTML = 'Searching...';
                 
                 try {
-                    let lat, lon, displayName;
-                    const useGoogle = document.getElementById('useGoogle').checked;
-                    const googleApiKey = document.getElementById('googleApiKey').value;
+                    // Use server-side geocoding (automatically uses Google Maps if API key is configured)
+                    const geoResponse = await fetch(`/geocode?address=${encodeURIComponent(address)}`);
+                    const geoData = await geoResponse.json();
                     
-                    if (useGoogle && googleApiKey) {
-                        // Use Google Maps Geocoding
-                        const googleUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleApiKey}`;
-                        const googleResponse = await fetch(googleUrl);
-                        const googleData = await googleResponse.json();
-                        
-                        if (googleData.status === 'OK' && googleData.results.length > 0) {
-                            const location = googleData.results[0].geometry.location;
-                            lat = location.lat;
-                            lon = location.lng;
-                            displayName = googleData.results[0].formatted_address;
-                        } else {
-                            resultDiv.innerHTML = `<span style="color: red;">Google Maps error: ${googleData.status}</span>`;
-                            return;
-                        }
-                    } else {
-                        // Use Nominatim (free)
-                        const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&addressdetails=1`);
-                        const geoData = await geoResponse.json();
-                        
-                        if (geoData.length > 0) {
-                            lat = parseFloat(geoData[0].lat);
-                            lon = parseFloat(geoData[0].lon);
-                            displayName = geoData[0].display_name;
-                        } else {
-                            resultDiv.innerHTML = 'Address not found. Try:<br>• City name ("Scottsdale, AZ")<br>• Zip code ("85718")<br>• Or enable Google Maps above';
-                            return;
-                        }
+                    if (geoData.error) {
+                        resultDiv.innerHTML = `<span style="color: red;">${geoData.error}</span>`;
+                        return;
                     }
+                    
+                    const lat = geoData.lat;
+                    const lon = geoData.lon;
+                    const displayName = geoData.display_name;
                     
                     // Check proximity via API
                     const apiResponse = await fetch(`/check-proximity?lat=${lat}&lon=${lon}&max_distance=50`);
